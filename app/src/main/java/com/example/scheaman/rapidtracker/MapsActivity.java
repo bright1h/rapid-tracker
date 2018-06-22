@@ -21,6 +21,7 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.firebase.auth.FirebaseAuth;
@@ -39,11 +40,15 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private static final int PERMISSIONS_REQUEST = 1;
 
     private GoogleMap mMap;
+    private FirebaseAuth mAuth;
+    private FirebaseUser user;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        mAuth = FirebaseAuth.getInstance();
+        user = mAuth.getCurrentUser();
         setContentView(R.layout.activity_maps);
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
@@ -84,26 +89,39 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-
-        final String path = "location" + "/" + "123";
+//        String uid = user.getUid();
+        final String path = "location" + "/" ;
         DatabaseReference ref = FirebaseDatabase.getInstance().getReference(path);
         ref.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 // This method is called once with the initial value and again
                 // whenever data at this location is updated.
-                GenericTypeIndicator<HashMap<String,Object>> t = new GenericTypeIndicator<HashMap<String,Object>>() {};
-                HashMap<String,Object> location = dataSnapshot.getValue(t);
-                Log.d("Retrieved", "Value is: " + location);
-
-                // Add a marker and move the camera
-                Double lat = (Double)location.get("latitude");
-                Double lng = (Double)location.get("longitude");
-                LatLng current = new LatLng(lat, lng);
 
                 mMap.clear();
-                mMap.addMarker(new MarkerOptions().position(current).title("ME"));
-                mMap.moveCamera(CameraUpdateFactory.newLatLng(current));
+                for (DataSnapshot postSnapshot: dataSnapshot.getChildren()) {
+                    System.out.println("fuck");
+                    System.out.println(postSnapshot);
+
+                    GenericTypeIndicator<HashMap<String,Object>> t = new GenericTypeIndicator<HashMap<String,Object>>() {};
+                    HashMap<String,Object> location = postSnapshot.getValue(t);
+                    Log.d("Retrieved", "Value is: " + location);
+
+                    // Add a marker and move the camera
+                    Double lat = (Double)location.get("latitude");
+                    Double lng = (Double)location.get("longitude");
+                    String name = (String)location.get("name");
+                    LatLng current = new LatLng(lat, lng);
+                    if (postSnapshot.getKey().equals(user.getUid())){
+                        mMap.addMarker(new MarkerOptions().position(current).title("ME"));
+                        mMap.moveCamera(CameraUpdateFactory.newLatLng(current));
+                    }
+                    else{
+                        mMap.addMarker(new MarkerOptions().position(current).title(name).icon(BitmapDescriptorFactory
+                                .defaultMarker(BitmapDescriptorFactory.HUE_AZURE)));
+                    }
+
+                }
             }
 
             @Override
@@ -116,7 +134,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
 
     private void requestLocationUpdates() {
-        final String path = "location" + "/" + "123";
+        final String path = "location" + "/" + user.getUid();
+        System.out.println("uid: ");
+        System.out.println(user.getUid());
         int permission = ContextCompat.checkSelfPermission(this,
                 Manifest.permission.ACCESS_FINE_LOCATION);
         if (permission == PackageManager.PERMISSION_GRANTED) {
@@ -135,6 +155,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     if (location != null) {
                         Log.d("Location", "location update " + location);
                         ref.setValue(location);
+                        ref.child("name").setValue(user.getDisplayName());
                     }
                 }
             }, null);

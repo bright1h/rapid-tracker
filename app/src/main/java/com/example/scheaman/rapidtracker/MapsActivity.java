@@ -155,7 +155,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     if (location != null) {
                         Log.d("Location", "location update " + location);
                         ref.setValue(location);
-                        ref.child("name").setValue(user.getDisplayName());
+//                        ref.child("name").setValue(user.getDisplayName());
                     }
                 }
             }, null);

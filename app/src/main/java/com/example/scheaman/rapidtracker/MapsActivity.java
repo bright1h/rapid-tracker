@@ -100,9 +100,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                 mMap.clear();
                 for (DataSnapshot postSnapshot: dataSnapshot.getChildren()) {
-                    System.out.println("fuck");
-                    System.out.println(postSnapshot);
-
                     GenericTypeIndicator<HashMap<String,Object>> t = new GenericTypeIndicator<HashMap<String,Object>>() {};
                     HashMap<String,Object> location = postSnapshot.getValue(t);
                     Log.d("Retrieved", "Value is: " + location);
@@ -110,25 +107,31 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     // Add a marker and move the camera
                     Double lat = (Double)location.get("latitude");
                     Double lng = (Double)location.get("longitude");
-                    String name = (String)location.get("name");
+//                    String name = (String)location.get("name");
                     LatLng current = new LatLng(lat, lng);
                     if (postSnapshot.getKey().equals(user.getUid())){
-                        mMap.addMarker(new MarkerOptions().position(current).title("ME"));
+
+                        mMap.addMarker(new MarkerOptions().position(current).title("Me").icon(BitmapDescriptorFactory
+                                .defaultMarker(BitmapDescriptorFactory.HUE_RED)));
                         mMap.moveCamera(CameraUpdateFactory.newLatLng(current));
-                    }
-                    else{
-                        mMap.addMarker(new MarkerOptions().position(current).title(name).icon(BitmapDescriptorFactory
+                    }else{
+
+                        mMap.addMarker(new MarkerOptions().position(current).icon(BitmapDescriptorFactory
                                 .defaultMarker(BitmapDescriptorFactory.HUE_AZURE)));
                     }
-
                 }
+
             }
+
 
             @Override
             public void onCancelled(@NonNull DatabaseError databaseError) {
                 // Ignore
             }
         });
+
+        //prevent overlap marking
+
     }
 
 
